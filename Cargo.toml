@@ -1,6 +1,19 @@
 [package]
 name = "zero2prod"
+authors = ["Giuseppe Turturiello <contact@gentiluomo.dev>"]
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "zero2prod"
+path = "src/main.rs"
+
 [dependencies]
+axum = "0.8.1"
+tokio = { version = "1.44.0", features = ["full"] }
+
+[dev-dependencies]
+reqwest = "0.12.12"

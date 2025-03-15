@@ -1,3 +1,6 @@
-fn main() {
-    println!("Hello, Gentleman.");
+use zero2prod::run;
+
+#[tokio::main]
+async fn main() {
+    run().await.expect("Failed running application.");
 }
