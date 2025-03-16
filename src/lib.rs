@@ -39,5 +39,6 @@ struct FormData {
 }
 
 async fn subscribe(Form(form): Form<FormData>) -> StatusCode {
+    println!("name {}, email {}", form.name, form.email);
     StatusCode::OK
 }
