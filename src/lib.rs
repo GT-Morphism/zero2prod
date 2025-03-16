@@ -1,6 +1,12 @@
 use std::net::SocketAddr;
 
-use axum::{Router, http::StatusCode, routing::get};
+use axum::{
+    Form, Router,
+    http::StatusCode,
+    routing::{get, post},
+};
+
+use serde::Deserialize;
 
 pub async fn run() -> Result<(), std::io::Error> {
     let port: u16 = std::env::var("PORT")
@@ -17,9 +23,21 @@ pub async fn run() -> Result<(), std::io::Error> {
 }
 
 pub fn app() -> Router {
-    Router::new().route("/health_check", get(health_check))
+    Router::new()
+        .route("/health_check", get(health_check))
+        .route("/subscriptions", post(subscribe))
 }
 
 async fn health_check() -> StatusCode {
+    StatusCode::OK
+}
+
+#[derive(Deserialize)]
+struct FormData {
+    email: String,
+    name: String,
+}
+
+async fn subscribe(Form(form): Form<FormData>) -> StatusCode {
     StatusCode::OK
 }
