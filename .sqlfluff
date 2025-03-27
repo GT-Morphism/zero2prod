@@ -1,0 +1,12 @@
+# https://docs.sqlfluff.com/en/stable/configuration/index.html
+[sqlfluff]
+dialect = postgres
+
+[sqlfluff:indentation]
+tab_space_size = 2
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = upper
+
+[sqlfluff:rules:references.keywords]
+ignore_words = name
