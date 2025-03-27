@@ -1,5 +1,7 @@
 use std::net::SocketAddr;
 
+use zero2prod::startup::app;
+
 #[tokio::test]
 async fn health_check_works() {
     let address = spawn_app().await;
@@ -21,7 +23,7 @@ async fn spawn_app() -> String {
     let port = listener.local_addr().unwrap().port();
 
     tokio::spawn(async move {
-        axum::serve(listener, zero2prod::app()).await.unwrap();
+        axum::serve(listener, app()).await.unwrap();
     });
 
     format!("http://127.0.0.1:{}", port)
