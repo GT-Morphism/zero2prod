@@ -3,6 +3,7 @@ use axum::{
     routing::{get, post},
 };
 
+use crate::configuration::get_configuration;
 use crate::routes::{health_check, subscribe};
 
 pub fn app() -> Router {
@@ -12,12 +13,9 @@ pub fn app() -> Router {
 }
 
 pub async fn run() -> Result<(), std::io::Error> {
-    let port: u16 = std::env::var("PORT")
-        .unwrap_or_else(|_| "3000".to_string())
-        .parse()
-        .expect("Failed to parse PORT");
+    let configuration = get_configuration().expect("Failed to read configuration.");
 
-    let address = std::net::SocketAddr::from(([0, 0, 0, 0], port));
+    let address = std::net::SocketAddr::from(([0, 0, 0, 0], configuration.application_port));
     let listener = tokio::net::TcpListener::bind(&address).await?;
 
     axum::serve(listener, app()).await?;
