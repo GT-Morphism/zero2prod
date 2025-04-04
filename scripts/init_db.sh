@@ -4,7 +4,7 @@ set -x
 set -u
 set -eo pipefail
 
-if ![-x "$(command -v sqlx)"]; then
+if ! [ -x "$(command -v sqlx)" ]; then
   echo >&2 "Error: sqlx is not installed."
   echo >&2 "Use:"
   echo >&2 "cargo install sqlx-cli --no-default-features --features rustls,postgres"
@@ -20,6 +20,7 @@ APP_USER="${APP_USER:=app}"
 APP_USER_PWD="${APP_USER_PWD:=secret}"
 APP_DB_NAME="${APP_DB_NAME:=newsletter}"
 
+SKIP_DOCKER=${SKIP_DOCKER:-}
 if [[ -z "${SKIP_DOCKER}" ]]; then
   CONTAINER_NAME="postgres"
   docker run \
