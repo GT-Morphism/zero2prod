@@ -10,7 +10,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   SQLX_VERSION: 0.8.3
-  SQLX_FEATURES: "tls-rustls,postgres"
+  SQLX_FEATURES: "rustls,postgres"
   APP_USER: app
   APP_USER_PWD: secret
   APP_DB_NAME: newsletter
@@ -40,7 +40,6 @@ jobs:
           --version=${{ env.SQLX_VERSION }}
           --features ${{ env.SQLX_FEATURES }}
           --no-default-features
-          --locked
 
       - name: Create app user in Postgres
         run: |
@@ -87,7 +86,6 @@ jobs:
           --version=${{ env.SQLX_VERSION }}
           --features ${{ env.SQLX_FEATURES }}
           --no-default-features
-          --locked
 
       - name: Create app user in Postgres
         run: |
