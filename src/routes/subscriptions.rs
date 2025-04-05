@@ -14,7 +14,7 @@ pub struct FormData {
 pub async fn subscribe(State(state): State<AppState>, Form(form): Form<FormData>) -> StatusCode {
     println!("name {}, email {}", form.name, form.email);
 
-    sqlx::query!(
+    match sqlx::query!(
         r#"
         INSERT INTO subscriptions (id, email, name, subscribed_at)
         VALUES ($1, $2, $3, $4)
@@ -26,7 +26,13 @@ pub async fn subscribe(State(state): State<AppState>, Form(form): Form<FormData>
     )
     .execute(&state.db_pool)
     .await
-    .unwrap(); // Add proper error handling in production
+    {
+        Ok(_) => StatusCode::OK,
+        Err(e) => {
+            println!("Failed to execute query: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        }
+    };
 
     StatusCode::OK
 }
