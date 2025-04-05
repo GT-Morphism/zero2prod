@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use uuid::Uuid;
 use zero2prod::{
-    configuration::{AppState, Databasesettings, get_configuration},
+    configuration::{AppState, DatabaseSettings, get_configuration},
     startup::app,
 };
 
@@ -35,8 +35,8 @@ async fn spawn_app() -> TestApp {
     }
 }
 
-pub async fn configure_database(config: &Databasesettings) -> PgPool {
-    let maintenance_settings = Databasesettings {
+pub async fn configure_database(config: &DatabaseSettings) -> PgPool {
+    let maintenance_settings = DatabaseSettings {
         database_name: "postgres".to_string(),
         username: "postgres".to_string(),
         password: "password".to_string(),
