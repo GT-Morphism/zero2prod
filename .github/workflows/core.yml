@@ -7,6 +7,8 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  SQLX_VERSION: 0.8.3
+  SQLX_FEATURES: "rustls,postgres"
 
 jobs:
   fmt:
