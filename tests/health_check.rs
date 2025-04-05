@@ -1,8 +1,9 @@
 use std::net::SocketAddr;
 
-use sqlx::PgPool;
+use sqlx::{Connection, Executor, PgConnection, PgPool};
+use uuid::Uuid;
 use zero2prod::{
-    configuration::{AppState, get_configuration},
+    configuration::{AppState, Databasesettings, get_configuration},
     startup::app,
 };
 
@@ -16,13 +17,12 @@ async fn spawn_app() -> TestApp {
     let listener = tokio::net::TcpListener::bind(&address).await.unwrap();
     let port = listener.local_addr().unwrap().port();
 
-    let configuration = get_configuration().expect("Failed to read configuration.");
-    let conncetion_pool = PgPool::connect(&configuration.database.connection_string())
-        .await
-        .expect("Failed to connect to Postgres.");
+    let mut configuration = get_configuration().expect("Failed to read configuration.");
+    configuration.database.database_name = format!("test_db_{}", Uuid::new_v4());
+    let connection_pool = configure_database(&configuration.database).await;
 
     let state = AppState {
-        db_pool: conncetion_pool.clone(),
+        db_pool: connection_pool.clone(),
     };
 
     tokio::spawn(async move {
@@ -31,8 +31,60 @@ async fn spawn_app() -> TestApp {
 
     TestApp {
         address: format!("http://127.0.0.1:{}", port),
-        db_pool: conncetion_pool,
+        db_pool: connection_pool,
     }
+}
+
+pub async fn configure_database(config: &Databasesettings) -> PgPool {
+    let maintenance_settings = Databasesettings {
+        database_name: "postgres".to_string(),
+        username: "postgres".to_string(),
+        password: "password".to_string(),
+        ..config.clone()
+    };
+
+    let mut connection = PgConnection::connect(&maintenance_settings.connection_string())
+        .await
+        .expect("Failed to connect to Postgres.");
+
+    let databases: Vec<String> =
+        sqlx::query_scalar("SELECT datname FROM pg_database WHERE datname LIKE 'test_db_%'")
+            .fetch_all(&mut connection)
+            .await
+            .expect("Failed to query test databases.");
+
+    for db_name in databases {
+        connection
+            .execute(
+                format!(
+                    r#"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='{}';"#,
+                    db_name
+                )
+                .as_str(),
+            )
+            .await
+            .expect("Failed to terminate database connection.");
+
+        connection
+            .execute(format!(r#"DROP DATABASE IF EXISTS "{}";"#, db_name).as_str())
+            .await
+            .expect("Failed to drop database.");
+    }
+
+    connection
+        .execute(format!(r#"CREATE DATABASE "{}";"#, config.database_name).as_str())
+        .await
+        .expect("Failed to create database.");
+
+    let connection_pool = PgPool::connect(&config.connection_string())
+        .await
+        .expect("Failed to connect to Postgres.");
+    sqlx::migrate!("./migrations")
+        .run(&connection_pool)
+        .await
+        .expect("Failed to migrate the database.");
+
+    connection_pool
 }
 
 #[tokio::test]
