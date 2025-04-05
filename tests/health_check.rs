@@ -1,11 +1,14 @@
 use std::net::SocketAddr;
 
-use sqlx::{Connection, PgConnection};
-use zero2prod::{configuration::get_configuration, startup::app};
+use sqlx::PgPool;
+use zero2prod::{
+    configuration::{AppState, get_configuration},
+    startup::app,
+};
 
 pub struct TestApp {
     pub address: String,
-    pub db_connection: PgConnection,
+    pub db_pool: PgPool,
 }
 
 async fn spawn_app() -> TestApp {
@@ -14,23 +17,21 @@ async fn spawn_app() -> TestApp {
     let port = listener.local_addr().unwrap().port();
 
     let configuration = get_configuration().expect("Failed to read configuration.");
-    let app_connection = PgConnection::connect(&configuration.database.connection_string())
+    let conncetion_pool = PgPool::connect(&configuration.database.connection_string())
         .await
         .expect("Failed to connect to Postgres.");
 
-    let test_connection = PgConnection::connect(&configuration.database.connection_string())
-        .await
-        .expect("Failed to connect to Postgres.");
+    let state = AppState {
+        db_pool: conncetion_pool.clone(),
+    };
 
     tokio::spawn(async move {
-        axum::serve(listener, app(app_connection.into()))
-            .await
-            .unwrap();
+        axum::serve(listener, app(state)).await.unwrap();
     });
 
     TestApp {
         address: format!("http://127.0.0.1:{}", port),
-        db_connection: test_connection,
+        db_pool: conncetion_pool,
     }
 }
 
@@ -51,7 +52,7 @@ async fn health_check_works() {
 
 #[tokio::test]
 async fn subscribe_returns_a_200_for_valid_form_data() {
-    let mut app = spawn_app().await;
+    let app = spawn_app().await;
 
     let client = reqwest::Client::new();
     let body = "name=Don%20Giovanni&email=don%40giovanni.com";
@@ -67,9 +68,12 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
     assert_eq!(200, response.status().as_u16());
 
     let saved = sqlx::query!("SELECT email, name FROM subscriptions",)
-        .fetch_one(&mut app.db_connection)
+        .fetch_one(&app.db_pool)
         .await
         .expect("Failed to fetch saved subscriptions");
+
+    assert_eq!(saved.email, "don@giovanni.com");
+    assert_eq!(saved.name, "Don Giovanni");
 }
 
 #[tokio::test]

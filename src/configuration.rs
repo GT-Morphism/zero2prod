@@ -1,3 +1,10 @@
+use sqlx::PgPool;
+
+#[derive(Clone)]
+pub struct AppState {
+    pub db_pool: PgPool,
+}
+
 #[derive(serde::Deserialize)]
 pub struct Settings {
     pub database: Databasesettings,
