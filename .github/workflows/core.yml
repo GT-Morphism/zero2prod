@@ -28,11 +28,19 @@ jobs:
       SQLX_OFFLINE: true
     steps:
       - uses: actions/checkout@v4
+
       - name: Install the Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: clippy
+
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli
+          --version=${{ env.SQLX_VERSION }}
+          --features ${{ env.SQLX_FEATURES }}
+          --no-default-features
       - name: Check that queries are fresh
         run: cargo sqlx prepare --workspace --check -- --all-targets
+
       - name: Linting
         run: cargo clippy -- -D warnings
