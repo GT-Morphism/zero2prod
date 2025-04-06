@@ -1,18 +1,11 @@
-use tracing_subscriber::EnvFilter;
+use tracing::info;
 use zero2prod::startup::run;
+use zero2prod::telemetry::init_telemetry;
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt()
-        .pretty()
-        .with_env_filter(
-            EnvFilter::try_from_default_env()
-                .or_else(|_| {
-                    EnvFilter::try_new("zero2prod=trace,tower_http=trace,axum::rejection=trace")
-                })
-                .unwrap(),
-        )
-        .init();
+    init_telemetry();
 
+    info!("Running application");
     run().await.expect("Failed running application.");
 }

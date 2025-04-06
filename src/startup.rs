@@ -1,14 +1,15 @@
 use axum::{
     Router,
+    http::Request,
     routing::{get, post},
 };
 use secrecy::ExposeSecret;
 use sqlx::PgPool;
 use tower::ServiceBuilder;
 use tower_http::{
-    ServiceBuilderExt,
+    LatencyUnit, ServiceBuilderExt,
     request_id::MakeRequestUuid,
-    trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer},
+    trace::{DefaultOnRequest, DefaultOnResponse, TraceLayer},
 };
 use tracing::Level;
 
@@ -20,12 +21,23 @@ pub fn app(state: AppState) -> Router {
         .set_x_request_id(MakeRequestUuid)
         .layer(
             TraceLayer::new_for_http()
-                .make_span_with(DefaultMakeSpan::new().include_headers(true))
+                .make_span_with(|request: &Request<_>| {
+                    let name = format!("{} {}", request.method(), request.uri());
+
+                    tracing::info_span!(
+                        "request",
+                        otel.name = name,
+                        method = %request.method(),
+                        uri = %request.uri(),
+                        headers = ?request.headers(),
+                        version = ?request.version(),
+                    )
+                })
                 .on_request(DefaultOnRequest::new().level(Level::INFO))
                 .on_response(
                     DefaultOnResponse::new()
                         .level(Level::INFO)
-                        .latency_unit(tower_http::LatencyUnit::Micros)
+                        .latency_unit(LatencyUnit::Micros)
                         .include_headers(true),
                 ),
         )

@@ -10,6 +10,13 @@ pub struct AppState {
 pub struct Settings {
     pub database: DatabaseSettings,
     pub application_port: u16,
+    pub tracing: TracingSettings,
+}
+
+#[derive(serde::Deserialize, Clone)]
+pub struct TracingSettings {
+    pub service_name: String,
+    pub tracer_name: String,
 }
 
 #[derive(serde::Deserialize, Clone)]

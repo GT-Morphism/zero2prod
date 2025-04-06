@@ -1,4 +1,12 @@
+# general
 application_port: 8000
+
+# tracing
+tracing:
+  service_name: "zero2prod"
+  tracer_name: "zero2prod-tracer"
+
+# database
 database:
   host: "127.0.0.1"
   port: 5432
